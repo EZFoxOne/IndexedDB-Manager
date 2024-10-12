@@ -78,8 +78,8 @@ class DatabaseManager {
     async get(key) {
         await this._waitForDB();
         return new Promise((resolve, reject) => {
-            const transaction = this.db.transaction('s');
-            const request = transaction.objectStore('s').get(key);
+            const transaction = this.db.transaction(this.storeName);
+            const request = transaction.objectStore(this.storeName).get(key);
 
             request.onsuccess = (event) => {
                 const result = (event.target.result && event.target.result['v']) || null;
@@ -108,14 +108,14 @@ class DatabaseManager {
 
         await this._waitForDB();
         return new Promise((resolve, reject) => {
-            const txn = this.db.transaction('s', 'readwrite');
+            const txn = this.db.transaction(this.storeName, 'readwrite');
             txn.oncomplete = () => resolve();
 
             txn.onerror = (event) => {
                 reject(new Error('Error setting the value in IndexedDB', { cause: event }));
             };
 
-            txn.objectStore('s').put({ k: key, v: value });
+            txn.objectStore(this.storeName).put({ [this.keyPath]: key, v: value });
             txn.commit();
         });
     }
@@ -128,7 +128,7 @@ class DatabaseManager {
     async delete(key) {
         await this._waitForDB();
         return new Promise((resolve, reject) => {
-            const request = this.db.transaction('s', 'readwrite').objectStore('s').delete(key);
+            const request = this.db.transaction(this.storeName, 'readwrite').objectStore(this.storeName).delete(key);
 
             request.onsuccess = () => resolve();
 
@@ -145,7 +145,7 @@ class DatabaseManager {
     async list() {
         await this._waitForDB();
         return new Promise((resolve, reject) => {
-            const request = this.db.transaction('s').objectStore('s').getAllKeys();
+            const request = this.db.transaction(this.storeName).objectStore(this.storeName).getAllKeys();
 
             request.onsuccess = (event) => resolve(event.target.result || []);
 
@@ -162,7 +162,7 @@ class DatabaseManager {
     async getAll() {
         await this._waitForDB();
         return new Promise((resolve, reject) => {
-            const request = this.db.transaction('s').objectStore('s').getAll();
+            const request = this.db.transaction(this.storeName).objectStore(this.storeName).getAll();
 
             request.onsuccess = (event) => resolve(event.target.result || []);
 
@@ -179,7 +179,7 @@ class DatabaseManager {
     async clear() {
         await this._waitForDB();
         return new Promise((resolve, reject) => {
-            const request = this.db.transaction('s', 'readwrite').objectStore('s').clear();
+            const request = this.db.transaction(this.storeName, 'readwrite').objectStore(this.storeName).clear();
 
             request.onsuccess = () => resolve();
 
@@ -198,16 +198,16 @@ class DatabaseManager {
     async setAll(entries) {
         await this._waitForDB();
         return new Promise((resolve, reject) => {
-            const txn = this.db.transaction('s', 'readwrite');
+            const txn = this.db.transaction(this.storeName, 'readwrite');
             txn.oncomplete = () => resolve();
 
             txn.onerror = (event) => {
                 reject(new Error('Error setting values in IndexedDB', { cause: event }));
             };
 
-            const store = txn.objectStore('s');
+            const store = txn.objectStore(this.storeName);
             entries.forEach(({ key, value }) => {
-                store.put({ k: key, v: value });
+                store.put({ [this.keyPath]: key, v: value });
             });
             txn.commit();
         });
